@@ -11,5 +11,10 @@
         public double X { get; }
 
         public double Y { get; }
+
+        public override string ToString()
+        {
+            return $"({X}, {Y})";
+        }
     }
 }

@@ -8,19 +8,45 @@ namespace Itv.Axxon.Model
 {
     public class NestingHierarchy
     {
-        private readonly List<Node> _rootLevel = new List<Node>();
+        private readonly Node _rootNode = new Node(null);
+
+        public NestingHierarchy()
+        {
+        }
+
+        public NestingHierarchy(IEnumerable<Triangle> triangles)
+        {
+            foreach (var figure in triangles)
+            {
+                Add(figure);
+            }   
+        }
+
+        public int GetHeight()
+        {
+            return GetFiguresWithLevels(0, _rootNode.ChildNodes).GroupBy(x => x.Item1).Count();
+        }
+
+        public IEnumerable<Triangle> GetSorted()
+        {
+            return GetFiguresWithLevels(0, _rootNode.ChildNodes).Select(x => x.Item2);
+        }
 
         public void Add(Triangle figure)
         {
             var newNode = new Node(figure);
-            var smallestContainerNode = FindSmallestContainerNode(_rootLevel, newNode);
 
+            // находим узел самой вложенной фигуры, заключающей добавляемую.
+            var smallestContainerNode = FindSmallestContainerNode(_rootNode.ChildNodes, newNode);
+
+            // если такой не найдено, берем корневой узел
             if (smallestContainerNode == null)
             {
-                _rootLevel.Add(newNode);
-                return;
+                smallestContainerNode = _rootNode;
             }
 
+            // находим среди дочерних узлов те, фигуры которых вложены в добавляемую, 
+            // переносим их уровнем ниже (в дочерние узлы нового узла)
             foreach (var childNode in smallestContainerNode.ChildNodes)
             {
                 if (Contains(newNode, childNode))
@@ -28,34 +54,28 @@ namespace Itv.Axxon.Model
                     newNode.ChildNodes.Add(childNode);
                 }
             }
-
             newNode.ChildNodes.ForEach(x =>
                 smallestContainerNode.ChildNodes.Remove(x));
 
             smallestContainerNode.ChildNodes.Add(newNode);
-            newNode.Parent = smallestContainerNode;
         }
 
-        public IEnumerable<Tuple<int, Triangle>> GetFiguresWithLevels()
+        private IEnumerable<Tuple<int, Triangle>> GetFiguresWithLevels(int level, List<Node> nodes)
         {
-            return GetFiguresWithLevels(0, _rootLevel);
-        }
-
-        private IEnumerable<Tuple<int, Triangle>> GetFiguresWithLevels(int level, IEnumerable<Node> startNodes)
-        {
-            var nodes = startNodes.ToArray();
             foreach (var node in nodes)
             {
                 yield return new Tuple<int, Triangle>(level, node.Figure);
             }
 
-            foreach (var tuple in GetFiguresWithLevels(level + 1, nodes.SelectMany(x => x.ChildNodes)))
+            var childLevel = nodes.SelectMany(x => x.ChildNodes).ToList();
+            if (childLevel.Any())
+            foreach (var tuple in GetFiguresWithLevels(level + 1, childLevel))
             {
                 yield return tuple;
             }
         }
 
-        private Node FindSmallestContainerNode(IEnumerable<Node> nodes, Node comparingNode)
+        private static Node FindSmallestContainerNode(IEnumerable<Node> nodes, Node comparingNode)
         {
             foreach (var node in nodes)
             {
@@ -68,11 +88,11 @@ namespace Itv.Axxon.Model
             return null;
         }
 
-        private bool Contains(Node node, Node comparingNode)
+        private static bool Contains(Node node, Node comparingNode)
         {
             var compareResult = node.Figure.CompareTo(comparingNode.Figure);
 
-            if (compareResult == BoundaryContainingResult.Inside)
+            if (compareResult == BoundaryContainingResult.Contains)
                 return true;
 
             if (compareResult == BoundaryContainingResult.Intersects)
@@ -81,7 +101,7 @@ namespace Itv.Axxon.Model
             return false;
         }
 
-        class Node
+        private class Node
         {
             public Node(Triangle figure)
             {
@@ -90,23 +110,7 @@ namespace Itv.Axxon.Model
 
             public Triangle Figure { get; }
 
-            public Node Parent { get; set; }
-
             public List<Node> ChildNodes { get; } = new List<Node>();
-        }
-    }
-
-    public class FigureContainingComparer<T1, T2>
-        where T1 : IBoundaryContainingComparable<T2>
-    {
-        public BoundaryContainingResult Contains(T1 x, T2 y)
-        {
-            if (x == null)
-                throw new ArgumentNullException(nameof(x));
-            if (y == null)
-                throw new ArgumentNullException(nameof(y));
-
-            return x.CompareTo(y);
         }
     }
 }

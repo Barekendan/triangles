@@ -3,10 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using Itv.Axxon.Model.Figures;
 
-namespace Itv.Axxon.Model.Utils
+namespace Itv.Axxon.Model.Parsing
 {
     public static class TriangleParser
     {
+        /// <summary>
+        /// Преобразует текст в треугольники.
+        /// </summary>
+        /// <param name="stream">Данные в формате: 1-ая строка - количество треугольников, последующие - x1 y1 x2 y2 x3 y3</param>
+        /// <returns></returns>
         public static IEnumerable<Triangle> ParseTriangles(Stream stream)
         {
             using (var streamReader = new StreamReader(stream))
@@ -55,7 +60,7 @@ namespace Itv.Axxon.Model.Utils
                 return new Point(x, y);
             }
 
-            throw new FormatException($"Не удалось преобразовать \"{xStr} {yStr}\" в точку");
+            throw new FormatException($"Не удалось преобразовать \"{xStr} {yStr}\" в координаты точки");
         }
 
     }

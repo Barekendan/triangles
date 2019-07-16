@@ -2,10 +2,19 @@
 {
     public enum BoundaryContainingResult
     {
-        Inside,
+        /// <summary>
+        /// Заключает внутри границ
+        /// </summary>
+        Contains,
 
-        Outside,
+        /// <summary>
+        /// Не заключает внутри границ
+        /// </summary>
+        IsNotContains,
 
+        /// <summary>
+        /// Пересекается
+        /// </summary>
         Intersects
     }
 }
